@@ -1,0 +1,20 @@
+@App:name("SiddhiApp")
+@App:description("Description of the plan")
+
+@source(type='http', receiver.url='http://localhost:8081/randomInt', @map(type='json')) 
+define stream RandomInt (value int);
+
+
+@sink(type='log') 
+define stream RandomIntBelow50 (value int);
+
+@sink(type='log') 
+define stream RandomIntAbove50 (value int);
+
+from RandomInt [value > 50]
+select value
+insert into RandomIntAbove50;
+
+from RandomInt [value < 50]
+select value
+insert into RandomIntBelow50;
