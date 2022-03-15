@@ -1,0 +1,19 @@
+@App:name("Measurements")
+@App:description("Receice CGM measurements and its timestamp")
+
+@source(type='http', receiver.url='http://localhost:8081/cgmMeasurements', @map(type='json', @attributes(value = '$.value', time = '$.time')))
+define stream InputStream (value float, time string);
+
+@sink(type='log')
+define stream Measurements(value float);
+
+@sink(type='log')
+define stream Time(time string);
+
+from InputStream
+select value
+insert into Measurements;
+
+from InputStream
+select time
+insert into Time;
