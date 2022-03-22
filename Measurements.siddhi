@@ -1,19 +1,35 @@
-@App:name("Measurements")
-@App:description("Receice CGM measurements and its timestamp")
+@App:name('Measurements')
+@App:description('Receice CGM measurements and its timestamp')
 
-@source(type='http', receiver.url='http://localhost:8081/cgmMeasurements', @map(type='json', @attributes(value = '$.value', time = '$.time')))
+-- @sink(type='log')
+@sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/message",
+	@map(type = 'json',
+		@payload("""{
+			  "messageName": "Blood sugar levels",
+			  "businessKey": "1",
+			  "processVariables": {
+			      "measurement": {
+			          "value": {{value}},
+			          "type": "String"
+			      }
+			  }
+			}""")))
+define stream Measurements (value float);
+
+@source(type = 'http', receiver.url = "http://localhost:8081/cgmMeasurements",
+	@map(type = 'json',
+		@attributes(time = "$.time", value = "$.value")))
 define stream InputStream (value float, time string);
 
-@sink(type='log')
-define stream Measurements(value float);
+@sink(type = 'log')
+define stream Time (time string);
 
-@sink(type='log')
-define stream Time(time string);
-
-from InputStream
-select value
+@info(name = 'query1')
+from InputStream 
+select value 
 insert into Measurements;
 
-from InputStream
-select time
+@info(name = 'query2')
+from InputStream 
+select time 
 insert into Time;
