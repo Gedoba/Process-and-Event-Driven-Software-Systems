@@ -1,35 +1,44 @@
 @App:name('Measurements')
 @App:description('Receice CGM measurements and its timestamp')
 
--- @sink(type='log')
+@sink(type='log')
 @sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/message",
 	@map(type = 'json',
 		@payload("""{
-			  "messageName": "Blood sugar levels",
-			  "businessKey": "1",
+			  "messageName": "{{messageName}}",
 			  "processVariables": {
-			      "measurement": {
+			      "bloodSugarLevelsValue": {
 			          "value": {{value}},
 			          "type": "String"
 			      }
 			  }
 			}""")))
-define stream Measurements (value float);
+define stream MessageStream (messageName string, value float);
 
-@source(type = 'http', receiver.url = "http://localhost:8081/cgmMeasurements",
+-- @sink(type='log')
+@source(type = 'http', receiver.url = "http://localhost:8082/cgmMeasurements",
 	@map(type = 'json',
 		@attributes(time = "$.time", value = "$.value")))
-define stream InputStream (value float, time string);
+define stream PythonInput (value float, time string);
 
-@sink(type = 'log')
+@sink(type='log')
+@source(type = 'http', receiver.url = "http://localhost:8081/bloodSugarLevels",	@map(type = 'json'))
+define stream CamundaBloodSugarLevelsInput (value float);
+
+-- @sink(type = 'log')
 define stream Time (time string);
 
 @info(name = 'query1')
-from InputStream 
-select value 
-insert into Measurements;
+from PythonInput 
+select 'Blood sugar levels' as messageName, value 
+insert into MessageStream;
 
-@info(name = 'query2')
-from InputStream 
-select time 
-insert into Time;
+-- @info(name = 'query2')
+-- from PythonInput 
+-- select time 
+-- insert into Time;
+
+@info(name = 'query3')
+from CamundaBloodSugarLevelsInput 
+select 'Dangerous blood sugar levels' as messageName, value 
+insert into MessageStream;

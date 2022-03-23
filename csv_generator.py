@@ -15,7 +15,7 @@ class Measurement:
     def send_data(self):
         for i in range(len(self.time)):
             data = {'value': self.measurement[0][i], 'time': self.time[i]}
-            requests.post('http://localhost:8081/cgmMeasurements', json=data)
+            requests.post('http://localhost:8082/cgmMeasurements', json=data)
             time.sleep(5)
         
 
