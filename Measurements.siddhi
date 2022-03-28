@@ -42,3 +42,12 @@ insert into MessageStream;
 from CamundaBloodSugarLevelsInput 
 select 'Dangerous blood sugar levels' as messageName, value 
 insert into MessageStream;
+
+@sink(type='log')
+@source(type = 'http', receiver.url = "http://localhost:8081/haveLevelsImproved",	@map(type = 'json'))
+define stream QueriesIfLevelsImprovedStream (ProcessId string);
+
+@info(name = 'query4')
+from QueriesIfLevelsImprovedStream 
+select 'Indication that blood sugar levels improved' as messageName, 'Not Improved' as value 
+insert into MessageStream;
