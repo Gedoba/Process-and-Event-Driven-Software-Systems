@@ -1,44 +1,68 @@
 @App:name('Measurements')
-@App:description('Receice CGM measurements and its timestamp')
-
-@sink(type='log')
-@sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/message",
-	@map(type = 'json',
-		@payload("""{
-			  "messageName": "{{messageName}}",
-			  "processVariables": {
-			      "bloodSugarLevelsValue": {
-			          "value": {{value}},
-			          "type": "String"
-			      }
-			  }
-			}""")))
-define stream MessageStream (messageName string, value float);
+@App:description('Receive CGM measurements and its timestamp')
 
 -- @sink(type='log')
 @source(type = 'http', receiver.url = "http://localhost:8082/cgmMeasurements",
 	@map(type = 'json',
 		@attributes(time = "$.time", value = "$.value")))
-define stream PythonInput (value float, time string);
+define stream PythonInput (value string, time string);
 
-@sink(type='log')
-@source(type = 'http', receiver.url = "http://localhost:8081/bloodSugarLevels",	@map(type = 'json'))
-define stream CamundaBloodSugarLevelsInput (value float);
+@sink(type = 'log')
+@sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/message",
+	@map(type = 'json',
+		@payload("""{
+						  "messageName": "{{messageName}}",
+
+						  "processVariables": {
+						      "{{variableName}}": {
+						          "value": {{value}},
+						          "type": "String"
+						      }
+						  }
+						}""")))
+define stream MessageStartStream (messageName string, value string, variableName string);
+
+@sink(type = 'log')
+@sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/process-instance/message-async",
+	@map(type = 'json',
+		@payload("""{
+          "messageName": "{{messageName}}",
+          "processInstanceIds": [
+            "{{processId}}"
+          ],
+          "variables": {
+            "{{variableName}}": {
+              "value": "{{value}}"
+            }
+          }
+        }""")))
+define stream MessageIntermediateStream (messageName string, value string, variableName string, processId string);
+
+@source(type = 'http', receiver.url = "http://localhost:8081/haveLevelsImproved",
+@map(type = 'json'))
+@sink(type = 'log')
+define stream QueriesIfLevelsImprovedStream (processId string);
 
 -- @sink(type = 'log')
 define stream Time (time string);
 
+@source(type = 'http', receiver.url = "http://localhost:8081/bloodSugarLevels",
+	@map(type = 'json'))
+
+@sink(type = 'log')
+define stream CamundaBloodSugarLevelsInput (value string);
+
 @info(name = 'query1')
 from PythonInput 
-select 'Blood sugar levels' as messageName, value 
-insert into MessageStream;
-
--- @info(name = 'query2')
--- from PythonInput 
--- select time 
--- insert into Time;
+select 'Blood sugar levels' as messageName, value, 'bloodSugarLevelsValue' as variableName 
+insert into MessageStartStream;
 
 @info(name = 'query3')
 from CamundaBloodSugarLevelsInput 
-select 'Dangerous blood sugar levels' as messageName, value 
-insert into MessageStream;
+select 'Dangerous blood sugar levels' as messageName, value, 'bloodSugarLevelsValue' as variableName 
+insert into MessageStartStream;
+
+@info(name = 'query4')
+from QueriesIfLevelsImprovedStream 
+select 'Indication that blood sugar levels improved' as messageName, 'Not Improved' as value, 'indication' as variableName, processId 
+insert into MessageIntermediateStream;
