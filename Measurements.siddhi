@@ -7,7 +7,7 @@
 		@attributes(time = "$.time", value = "$.value")))
 define stream PythonInput (value int, time int);
 
--- @sink(type = 'log')
+@sink(type = 'log')
 @sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/message",
 	@map(type = 'json',
 		@payload("""{
@@ -62,7 +62,6 @@ insert into MessageStartStream;
 
 
 --pattern recognition
-@sink(type = 'log')
 @info(name='pattern recognition') 
 from
 every(e1 = CamundaBloodSugarLevelsInput) ->
@@ -79,6 +78,6 @@ insert into MessageStartStream;
 @info(name='pattern recognition2') 
 from
     e1 = QueriesIfLevelsImprovedStream [not(processId is null)] ->
-    not CamundaBloodSugarLevelsInput [value > 3500 and value < 6000] for 1 min
+    e2 = CamundaBloodSugarLevelsInput [value > 3500 and value < 6000]
 select 'Indication that blood sugar levels improved' as messageName, 'Improved' as value, 'indication' as variableName, e1.processId
 insert into MessageIntermediateStream;
