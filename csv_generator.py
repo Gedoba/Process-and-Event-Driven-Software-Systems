@@ -10,13 +10,16 @@ class Measurement:
 
     def read_file(self):
         self.time = np.genfromtxt(self.time_filename, delimiter=',', dtype="str")
-        self.measurement = np.genfromtxt(self.measurement_filename, delimiter=',', dtype="str")
+        self.measurement = np.genfromtxt(self.measurement_filename, delimiter=',', dtype="float")
 
     def send_data(self):
-        for i in range(len(self.time)):
-            data = {'value': self.measurement[0][i], 'time': self.time[i]}
-            requests.post('http://localhost:8082/cgmMeasurements', json=data)
-            time.sleep(5)
+        time_start = 80000 # 8.00
+        start_tick = 95
+        for i in range(start_tick, len(self.measurement[0])):
+            data = {'value': int(self.measurement[0][i] * 1000), 'time': time_start}
+            requests.post('http://localhost:8089/cgmMeasurements', json=data)
+            time_start += 500
+            time.sleep(2)
         
 
 measurement = Measurement('time.csv', 'measurements.csv')

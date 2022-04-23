@@ -2,25 +2,29 @@
 @App:description('Receive CGM measurements and its timestamp')
 
 -- @sink(type='log')
-@source(type = 'http', receiver.url = "http://localhost:8082/cgmMeasurements",
+@source(type = 'http', receiver.url = "http://localhost:8089/cgmMeasurements",
 	@map(type = 'json',
 		@attributes(time = "$.time", value = "$.value")))
-define stream PythonInput (value string, time string);
+define stream PythonInput (value int, time int);
 
-@sink(type = 'log')
+-- @sink(type = 'log')
 @sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/message",
 	@map(type = 'json',
 		@payload("""{
-						  "messageName": "{{messageName}}",
+					  "messageName": "{{messageName}}",
 
-						  "processVariables": {
-						      "{{variableName}}": {
-						          "value": {{value}},
-						          "type": "String"
-						      }
+					  "processVariables": {
+					      "{{variableName}}": {
+					          "value": {{value}},
+					          "type": "integer"
+					      },
+    			        "time": {
+    			            "value": {{timeToCamunda}},
+    			            "type":"integer"
+    			        }
 						  }
 						}""")))
-define stream MessageStartStream (messageName string, value string, variableName string);
+define stream MessageStartStream (messageName string, value int, variableName string, timeToCamunda int);
 
 @sink(type = 'log')
 @sink(type = 'http', publisher.url = "http://localhost:8080/engine-rest/process-instance/message-async",
@@ -43,26 +47,38 @@ define stream MessageIntermediateStream (messageName string, value string, varia
 @sink(type = 'log')
 define stream QueriesIfLevelsImprovedStream (processId string);
 
--- @sink(type = 'log')
 define stream Time (time string);
 
 @source(type = 'http', receiver.url = "http://localhost:8081/bloodSugarLevels",
 	@map(type = 'json'))
 
 @sink(type = 'log')
-define stream CamundaBloodSugarLevelsInput (value string);
+define stream CamundaBloodSugarLevelsInput (value int, time int);
 
 @info(name = 'query1')
 from PythonInput 
-select 'Blood sugar levels' as messageName, value, 'bloodSugarLevelsValue' as variableName 
+select 'Blood sugar levels' as messageName, value, 'bloodSugarLevelsValue' as variableName, time as timeToCamunda
 insert into MessageStartStream;
 
-@info(name = 'query3')
-from CamundaBloodSugarLevelsInput 
-select 'Dangerous blood sugar levels' as messageName, value, 'bloodSugarLevelsValue' as variableName 
+
+--pattern recognition
+@sink(type = 'log')
+@info(name='pattern recognition') 
+from
+every(e1 = CamundaBloodSugarLevelsInput) ->
+every(e2 = CamundaBloodSugarLevelsInput [ ((time - e1.time) == 500 or (time - e1.time) == 4500)]) ->
+every(e3 = CamundaBloodSugarLevelsInput [ ((time - e2.time) == 500 or (time - e2.time) == 4500)]) ->
+every(e4 = CamundaBloodSugarLevelsInput [ ((time - e3.time) == 500 or (time - e3.time) == 4500)]) ->
+every(e5 = CamundaBloodSugarLevelsInput [ ((time - e4.time) == 500 or (time - e4.time) == 4500)]) ->
+every(e6 = CamundaBloodSugarLevelsInput [ ((time - e5.time) == 500 or (time - e5.time) == 4500)]) ->
+e7 = CamundaBloodSugarLevelsInput [(e1.value < value - 1000 or e1.value > value + 1000)]
+select'Dangerous blood sugar levels' as messageName, e7.value as value, 'bloodSugarLevelsValue' as variableName, e7.time as timeToCamunda
 insert into MessageStartStream;
 
-@info(name = 'query4')
-from QueriesIfLevelsImprovedStream 
-select 'Indication that blood sugar levels improved' as messageName, 'Not Improved' as value, 'indication' as variableName, processId 
+
+@info(name='pattern recognition2') 
+from
+    e1 = QueriesIfLevelsImprovedStream [not(processId is null)] ->
+    not CamundaBloodSugarLevelsInput [value > 3500 and value < 6000] for 1 min
+select 'Indication that blood sugar levels improved' as messageName, 'Improved' as value, 'indication' as variableName, e1.processId
 insert into MessageIntermediateStream;
