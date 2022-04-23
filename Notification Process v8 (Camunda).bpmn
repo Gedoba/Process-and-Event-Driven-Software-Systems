@@ -212,14 +212,14 @@
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${indication == 'Improved'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_007kgsz" name="" sourceRef="Event_01ipaw0" targetRef="Event_0k6kbfa" />
-    <bpmn:intermediateThrowEvent id="Event_0bejz59" camunda:asyncBefore="true" camunda:exclusive="false">
+    <bpmn:intermediateThrowEvent id="Event_0bejz59" name="Blood sugar levels improved" camunda:asyncBefore="true" camunda:exclusive="false">
       <bpmn:incoming>Flow_0jmmxif</bpmn:incoming>
       <bpmn:outgoing>Flow_0bkopgo</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0mu19f7" messageRef="Message_1bvfzta" camunda:expression="${execution.getProcessEngineServices().getRuntimeService().createMessageCorrelation(&#34;Successful intervention&#34;).correlateWithResult()}" />
     </bpmn:intermediateThrowEvent>
     <bpmn:sequenceFlow id="Flow_0bkopgo" sourceRef="Event_0bejz59" targetRef="Event_1a2tr7g" />
     <bpmn:sequenceFlow id="Flow_0xg21sg" sourceRef="Gateway_1ri4nyf" targetRef="Event_0a7rpol" />
-    <bpmn:endEvent id="Event_0a7rpol" camunda:asyncBefore="true">
+    <bpmn:endEvent id="Event_0a7rpol" name="Ambulance called" camunda:asyncBefore="true">
       <bpmn:incoming>Flow_0xg21sg</bpmn:incoming>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0gay4s0" messageRef="Message_09wovgp" camunda:expression="${execution.getProcessEngineServices().getRuntimeService().createMessageCorrelation(&#34;Ambulance&#34;).correlateWithResult()}" />
     </bpmn:endEvent>
@@ -280,8 +280,8 @@
         <bpmn:flowNodeRef>Event_0l9ukeq</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_1n9j8ie</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_0ybx4i1</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_107o9tq</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_1ae7t0e</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_107o9tq</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
     <bpmn:startEvent id="Event_0tzoqub" name="Notification from app received">
@@ -335,16 +335,13 @@
       <bpmn:messageEventDefinition id="MessageEventDefinition_1nfbjqz" messageRef="Message_09wovgp" />
     </bpmn:intermediateCatchEvent>
     <bpmn:sequenceFlow id="Flow_1t2f28n" name="" sourceRef="Event_1n9j8ie" targetRef="Event_1ae7t0e" />
-    <bpmn:intermediateCatchEvent id="Event_0ybx4i1">
+    <bpmn:intermediateCatchEvent id="Event_0ybx4i1" name="Blood sugar levels improved">
       <bpmn:incoming>Flow_1egm6jn</bpmn:incoming>
       <bpmn:outgoing>Flow_1ju4f1e</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0iw3p9o" messageRef="Message_1bvfzta" />
     </bpmn:intermediateCatchEvent>
     <bpmn:sequenceFlow id="Flow_1ju4f1e" name="" sourceRef="Event_0ybx4i1" targetRef="Event_0l9ukeq" />
     <bpmn:sequenceFlow id="Flow_1egm6jn" name="" sourceRef="Activity_00ncwrc" targetRef="Event_0ybx4i1" />
-    <bpmn:endEvent id="Event_107o9tq" name="">
-      <bpmn:incoming>Flow_0yi5nxp</bpmn:incoming>
-    </bpmn:endEvent>
     <bpmn:intermediateCatchEvent id="Event_1ae7t0e" name="Debugging test">
       <bpmn:incoming>Flow_1t2f28n</bpmn:incoming>
       <bpmn:outgoing>Flow_0yi5nxp</bpmn:outgoing>
@@ -352,6 +349,9 @@
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT10M</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="Event_107o9tq" name="Successful intervention">
+      <bpmn:incoming>Flow_0yi5nxp</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
   <bpmn:message id="Message_0llay8d" name="Blood sugar levels" />
   <bpmn:message id="Message_1egdq7q" name="Notification to smartphone about dangerous levels of blood sugar" />
@@ -619,9 +619,15 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0qijvkf_di" bpmnElement="Event_0bejz59">
         <dc:Bounds x="2207" y="753" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2187" y="796" width="77" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_11so50h_di" bpmnElement="Event_0a7rpol">
         <dc:Bounds x="2577" y="1050" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2552" y="1093" width="86" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="TextAnnotation_1vvig0s_di" bpmnElement="TextAnnotation_1vvig0s">
         <dc:Bounds x="1591" y="1260" width="77" height="54" />
@@ -692,7 +698,7 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0yi5nxp_di" bpmnElement="Flow_0yi5nxp">
         <di:waypoint x="2685" y="250" />
-        <di:waypoint x="2716" y="250" />
+        <di:waypoint x="2726" y="250" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1llypl7_di" bpmnElement="Flow_1llypl7">
         <di:waypoint x="2385" y="150" />
@@ -751,22 +757,25 @@
       <bpmndi:BPMNShape id="Event_1n9j8ie_di" bpmnElement="Event_1n9j8ie">
         <dc:Bounds x="2580" y="235" width="30" height="30" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2688" y="178" width="83" height="53" />
+          <dc:Bounds x="2548" y="178" width="83" height="53" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0ybx4i1_di" bpmnElement="Event_0ybx4i1">
         <dc:Bounds x="2210" y="135" width="30" height="30" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_107o9tq_di" bpmnElement="Event_107o9tq">
-        <dc:Bounds x="2716" y="236" width="28" height="28" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1293" y="271" width="55" height="27" />
+          <dc:Bounds x="2187" y="105" width="77" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1ae7t0e_di" bpmnElement="Event_1ae7t0e">
         <dc:Bounds x="2655" y="235" width="30" height="30" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="2633" y="267" width="75" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_107o9tq_di" bpmnElement="Event_107o9tq">
+        <dc:Bounds x="2726" y="236" width="28" height="28" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2712" y="271" width="57" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1d0ygp2_di" bpmnElement="Event_1d0ygp2">
